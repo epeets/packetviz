@@ -34,7 +34,7 @@ Then, PacketViz can be run as an executable jar archive:
 
     $ java -jar pktviz/target/pktviz-shaded.jar
 
-If you'd like to get a quick example to try out, download the source distribution and use an example ".pkt" file from the examples directory.
+If you'd like to get a quick example to try out, an example ".pkt" file is included:
 
     $ java -jar pktviz/target/pktviz-shaded.jar pktviz/examples/version4_cache_flow.pkt
 
