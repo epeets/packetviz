@@ -1,0 +1,411 @@
+/*
+ * PacketViz packet visualization for the Java (TM) Platform
+ * Copyright (C) 2007 Newisys, Inc. or its licensors, as applicable.
+ * Java is a registered trademark of Sun Microsystems, Inc. in the U.S. or
+ * other countries.
+ *
+ * Licensed under the Open Software License version 3.0 (the "License"); you
+ * may not use this file except in compliance with the License. You should
+ * have received a copy of the License along with this software; if not, you
+ * may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/osl-3.0.php
+ *
+ * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package com.newisys.apps.pktviz.model;
+
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+
+import com.newisys.prtree.Interval;
+import com.newisys.util.packet.FieldDumpListener;
+
+public final class PacketInfo
+    implements Interval
+{
+    private static final int HEX_RADIX = 16;
+    private static final int BIN_RADIX = 2;
+    private TxnInfo txn;
+    private PacketNode fromNode;
+    private long fromTimeActual;
+    private long fromTime;
+    private PacketNode toNode;
+    private long toTimeActual;
+    private long toTime;
+    private long packetBits;
+    private boolean hasRemoteBits;
+    private short remoteBits;
+    private int[] dataDwords;
+    private String packetName;
+    private String label;
+    private Color color;
+    private PacketGraph graph;
+    private int disableUpdateCount;
+    private boolean updated;
+    private String packetFieldList;
+    private ArrayList<PacketFieldListEntry> packetFieldArrayList = null;
+
+    public PacketInfo(
+        TxnInfo _txn,
+        PacketNode _fromNode,
+        long _fromTimeActual,
+        PacketNode _toNode,
+        long _toTimeActual,
+        long _packetBits,
+        boolean _hasRemoteBits,
+        short _remoteBits,
+        int[] _dataDwords,
+        String _packetName,
+        String _packetFieldList)
+    {
+        txn = _txn;
+        fromNode = _fromNode;
+        fromTimeActual = _fromTimeActual;
+        fromTime = _fromTimeActual;
+        toNode = _toNode;
+        toTimeActual = _toTimeActual;
+        toTime = _toTimeActual;
+        packetBits = _packetBits;
+        hasRemoteBits = _hasRemoteBits;
+        remoteBits = _remoteBits;
+        dataDwords = _dataDwords;
+        packetName = _packetName;
+        packetFieldList = _packetFieldList;
+
+        // Methods added for Version 4 file format (Name/Field format)
+        processPacketFieldList();
+        setPacketInfoFromFields();
+    }
+
+    // Groups for java.util.regex.Matcher:
+    //                                                        group1   group2  group3
+    static Pattern verilogStyleNumberRegex = Pattern.compile("([0-9]+)'([bh])([0-9a-zA-Z]+)");
+
+    private void setPacketInfoFromFields()
+    {
+        if (packetFieldList == null) return;
+
+        assert (packetFieldArrayList.size() != 0);
+
+        String name;
+        String value;
+        for (PacketFieldListEntry packetFieldListEntry : packetFieldArrayList)
+        {
+            name = packetFieldListEntry.name;
+            value = packetFieldListEntry.value;
+            if (name.equals("Cmd"))
+            {
+                packetName = value;
+                assert (txn != null);
+                txn.setPacketName(value);
+            }
+            else if (name.equals("addr"))
+            {
+                Matcher verilogStyleNumberMatcher = verilogStyleNumberRegex.matcher(value);
+                if (!verilogStyleNumberMatcher.matches())
+                {
+                    assert (false) : "Illegal token for verilog number string:"
+                        + value;
+                }
+                String binaryHexFlag = verilogStyleNumberMatcher.group(2);
+                String rawNumber = verilogStyleNumberMatcher.group(3);
+                int radix;
+                if (binaryHexFlag.toLowerCase().equals("b"))
+                {
+                    radix = BIN_RADIX;
+                }
+                else if (binaryHexFlag.toLowerCase().equals("h"))
+                {
+                    radix = HEX_RADIX;
+                }
+                else
+                {
+                    radix = -1;
+                    assert (false) : "Unknown radix qualifier: "
+                        + binaryHexFlag;
+                }
+
+                txn.setAddrValue(Long.parseLong(rawNumber, radix));
+            }
+
+        }
+    }
+
+    private static class PacketFieldListEntry
+    {
+        String name;
+        String value;
+
+        PacketFieldListEntry(String name, String value)
+        {
+            this.name = name;
+            this.value = value;
+        }
+
+        /**
+         * @generated by CodeSugar http://sourceforge.net/projects/codesugar */
+
+        public String toString()
+        {
+            StringBuffer buffer = new StringBuffer();
+            buffer.append("[PacketFieldListEntry:");
+            buffer.append(" name: ");
+            buffer.append(name);
+            buffer.append(" value: ");
+            buffer.append(value);
+            buffer.append("]");
+            return buffer.toString();
+        }
+    }
+
+    private void processPacketFieldList()
+    {
+        if (packetFieldList == null) return;
+
+        packetFieldArrayList = new ArrayList<PacketFieldListEntry>();
+
+        StringTokenizer semicolonTokenizer = new StringTokenizer(
+            packetFieldList, ";");
+        String name;
+        String value;
+        while (semicolonTokenizer.hasMoreElements())
+        {
+            name = null;
+            value = null;
+
+            String nameValue = semicolonTokenizer.nextToken();
+            StringTokenizer equalsTokenizer = new StringTokenizer(nameValue,
+                "=");
+            if (equalsTokenizer.countTokens() == 1)
+            {
+                name = (String) equalsTokenizer.nextElement();
+                name = name.trim();
+            }
+            else
+            {
+                name = (String) equalsTokenizer.nextElement();
+                name = name.trim();
+                value = (String) equalsTokenizer.nextElement();
+                value = value.trim();
+            }
+            PacketFieldListEntry packetFieldListEntry = new PacketFieldListEntry(
+                name, value);
+            if (!(name == null || name.equals("")))
+                packetFieldArrayList.add(packetFieldListEntry);
+        }
+
+    }
+
+    public TxnInfo getTxn()
+    {
+        return txn;
+    }
+
+    public String getPacketName()
+    {
+        return packetName;
+    }
+
+    public PacketNode getFromNode()
+    {
+        return fromNode;
+    }
+
+    public long getFromTimeActual()
+    {
+        return fromTimeActual;
+    }
+
+    public long getFromTime()
+    {
+        return fromTime;
+    }
+
+    public void setFromTime(long _fromTime)
+    {
+        fromTime = _fromTime;
+    }
+
+    public PacketNode getToNode()
+    {
+        return toNode;
+    }
+
+    public long getToTimeActual()
+    {
+        return toTimeActual;
+    }
+
+    public long getToTime()
+    {
+        return toTime;
+    }
+
+    public void setToTime(long _toTime)
+    {
+        toTime = _toTime;
+    }
+
+    public long getPacketBits()
+    {
+        return packetBits;
+    }
+
+    public short getRemoteBits()
+    {
+        return remoteBits;
+    }
+
+    public String getLabel()
+    {
+        return label;
+    }
+
+    public void setLabel(String _label)
+    {
+        if (!_label.equals(label))
+        {
+            label = _label;
+            packetUpdated();
+        }
+    }
+
+    public Color getColor()
+    {
+        return color;
+    }
+
+    public void setColor(Color _color)
+    {
+        if (color != _color)
+        {
+            color = _color;
+            packetUpdated();
+        }
+    }
+
+    void setGraph(PacketGraph g)
+    {
+        if (graph != null)
+        {
+            throw new IllegalStateException("Packet is already in a graph");
+        }
+        graph = g;
+    }
+
+    public void disableUpdateEvents()
+    {
+        ++disableUpdateCount;
+    }
+
+    public void enableUpdateEvents()
+    {
+        if (--disableUpdateCount == 0 && updated)
+        {
+            packetUpdated();
+        }
+    }
+
+    private void packetUpdated()
+    {
+        if (graph != null)
+        {
+            if (disableUpdateCount == 0)
+            {
+                graph.packetUpdated(this);
+                updated = false;
+            }
+            else
+            {
+                updated = true;
+            }
+        }
+    }
+
+    public void dumpTo(FieldDumpListener fdl)
+    {
+        // dump from/to info
+        fdl.dumpString("FromNode", fromNode.getName());
+        fdl.dumpLong("FromTime", fromTimeActual);
+        fdl.dumpString("ToNode", toNode.getName());
+        fdl.dumpLong("ToTime", toTimeActual);
+
+        // Dump raw fields for Version 4
+        if (packetFieldList != null)
+        {
+            String name;
+            String val;
+
+            for (PacketFieldListEntry packetFieldListEntry : packetFieldArrayList)
+            {
+                name = packetFieldListEntry.name;
+                if (name.startsWith("DBG")) continue;
+                val = packetFieldListEntry.value;
+                if (val != null)
+                    fdl.dumpString(name, val);
+                else
+                    fdl.dumpBoolean(name, true);
+            }
+        }
+
+        // version 2,3 - unsupported
+        assert(packetFieldList != null);
+
+        // Dump debug fields for Version 4
+        if (packetFieldList != null)
+        {
+            String name;
+            String val;
+
+            for (PacketFieldListEntry packetFieldListEntry : packetFieldArrayList)
+            {
+                name = packetFieldListEntry.name;
+                val = packetFieldListEntry.value;
+                if (name.startsWith("DBG"))
+                {
+                    if (val != null)
+                        fdl.dumpString(name, val);
+                    else
+                        fdl.dumpBoolean(name, true);
+                }
+            }
+        }
+    }
+
+    public String toString()
+    {
+        assert (packetFieldList != null);
+        return packetFieldList;
+    }
+
+    // Interval methods
+
+    public long getLowerBound()
+    {
+        return fromTime;
+    }
+
+    public boolean isLowerBoundClosed()
+    {
+        return true;
+    }
+
+    public long getUpperBound()
+    {
+        return toTime;
+    }
+
+    public boolean isUpperBoundClosed()
+    {
+        return true;
+    }
+
+}

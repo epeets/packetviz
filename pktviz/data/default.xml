@@ -1,0 +1,48 @@
+<packetgraph>
+
+    <nodes>
+
+        <!-- Global properties -->
+        <update>
+            <fgcolor value="#808080"/>
+        </update>
+
+        <!-- Box properties -->
+        <update pattern="box([0-9]+)$">
+            <label>Box $1</label>
+        </update>
+        <update id="box0" pattern="box0$">
+            <bgcolor value="#FFFFFF"/>
+            <position absolute="first"/>
+        </update>
+        <update id="box1" pattern="box1$">
+            <bgcolor value="#DDDDDD"/>
+            <position relative="after" refid="box0"/>
+        </update>
+        <update id="box2" pattern="box2$">
+            <bgcolor value="#FFFFFF"/>
+            <position relative="after" refid="box1"/>
+        </update>
+        <update id="box3" pattern="box3$">
+            <bgcolor value="#DDDDDD"/>
+            <position relative="after" refid="box2"/>
+        </update>
+        <update id="box4" pattern="box4$">
+            <bgcolor value="#FFFFFF"/>
+            <position relative="after" refid="box3"/>
+        </update>
+        <update id="box5" pattern="box5$">
+            <bgcolor value="#DDDDDD"/>
+            <position relative="after" refid="box4"/>
+        </update>
+        <update id="box6" pattern="box6$">
+            <bgcolor value="#FFFFFF"/>
+            <position relative="after" refid="box5"/>
+        </update>
+        <update id="box7" pattern="box7$">
+            <bgcolor value="#DDDDDD"/>
+            <position relative="after" refid="box6"/>
+        </update>
+    </nodes>
+
+</packetgraph>

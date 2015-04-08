@@ -1,0 +1,14 @@
+# Packet Log Version 4
+# 
+# Fields list is a semicolon separated list of name=value pairs.
+# Field "Cmd" represents the packet name.
+# 
+# Recv Time,Send Time,Txn,From,To,Packet Fields List,Remote Bits,Data
+1,0,5,system.chip0.Cache0,system.chip1.Memory0,Cmd=ReadMem; addr=60'hBEEF
+2,0,5,system.chip0.Cache0,system.chip0.Cache1,Cmd=SnoopLine; addr=60'hBEEF
+3,2,5,system.chip0.Cache1,system.chip0.Cache0,Cmd=NotPresent; addr=60'hBEEF
+4,1,5,system.chip1.Memory0,system.chip0.Cache0,Cmd=MemData; addr=60'hBEEF; data=32'hDEEDDEED
+6,5,10,system.chip0.Cache1,system.chip1.Memory1,Cmd=ReadMem; addr=60'hBEEF2
+7,5,10,system.chip0.Cache1,system.chip0.Cache0,Cmd=SnoopLine; addr=60'hBEEF2
+8,7,10,system.chip0.Cache0,system.chip0.Cache1,Cmd=NotPresent; addr=60'hBEEF2
+9,6,10,system.chip1.Memory1,system.chip0.Cache1,Cmd=MemData; addr=60'hBEEF2; data=32'hDEED2222
