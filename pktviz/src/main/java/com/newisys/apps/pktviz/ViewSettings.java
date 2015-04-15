@@ -202,8 +202,8 @@ public class ViewSettings
     {
         if (packetFilter instanceof TxnIdFilter)
         {
-            setPacketStyler(new PacketStyler(PacketStyler.LABEL_CMD_SHORT,
-                PacketStyler.COLOR_BY_VC));
+            setPacketStyler(new PacketStyler(PacketStyler.LABEL_CMD,
+                PacketStyler.COLOR_BY_CMD));
         }
         else
         {

@@ -33,14 +33,11 @@ public class PacketStyler
 {
 
     public static final int LABEL_CMD_TXN = 0;
-    public static final int LABEL_CMD_SHORT = 1;
-    public static final int LABEL_CMD_FULL = 2;
-    public static final int LABEL_TXN = 3;
-    public static final int LABEL_VC = 4;
+    public static final int LABEL_CMD = 1;
+    public static final int LABEL_TXN = 2;
 
     public static final int COLOR_BY_TXN = 0;
     public static final int COLOR_BY_CMD = 1;
-    public static final int COLOR_BY_VC = 2;
 
     private int labelMode;
     private int colorMode;
@@ -68,6 +65,11 @@ public class PacketStyler
         return (labelMode == other.labelMode && colorMode == other.colorMode);
     }
 
+    public int hashCode()
+    {
+        return 31 * labelMode + colorMode;
+    }
+
     public int getColorMode()
     {
         return colorMode;
@@ -91,35 +93,21 @@ public class PacketStyler
     public void updateStyle(PacketInfo info)
     {
         TxnInfo txn = info.getTxn();
-        String packetName = info.getPacketName();
-        String shortLabel = packetName;
+        String cmd = info.getPacketName();
 
         String label = null;
 
         switch (labelMode)
         {
-            case LABEL_CMD_SHORT:
-                label = shortLabel;
-                break;
-            case LABEL_CMD_FULL:
-                label = shortLabel;
+            case LABEL_CMD:
+                label = cmd;
                 break;
             case LABEL_TXN:
                 label = (txn != null) ? String.valueOf(txn.getTxnID()) : "";
                 break;
             case LABEL_CMD_TXN:
-                StringBuffer buf = new StringBuffer(shortLabel);
-                if (txn != null)
-                {
-                    buf.append(':');
-                    buf.append(txn.getTxnID());
-                }
-                label = buf.toString();
+                label = cmd + (txn != null ? ":" + txn.getTxnID() : "");
                 break;
-            case LABEL_VC:
-                throw new RuntimeException("VC labeling TBD");
-            default:
-                throw new IllegalStateException();
         }
 
         Color color = null;
@@ -130,9 +118,8 @@ public class PacketStyler
                     : Color.BLACK;
                 break;
             case COLOR_BY_CMD:
-                throw new RuntimeException("CMD labeling TBD");
-            default:
-                throw new IllegalStateException("Unhandled mode: " + colorMode);
+                color = getTxnColor(hashTo6Bits(cmd.hashCode()));
+                break;
         }
 
         info.disableUpdateEvents();
@@ -151,6 +138,10 @@ public class PacketStyler
         {
             info.enableUpdateEvents();
         }
+    }
+
+    private static int hashTo6Bits(int h) {
+        return ((h) ^ (h >>> 6) ^ (h >>> 12) ^ (h >>> 18) ^ (h >>> 24)) & 63;
     }
 
     public void updateAll(PacketGraph graph)
@@ -204,30 +195,5 @@ public class PacketStyler
     public void filterChanged()
     {
         // do nothing
-    }
-
-    /**
-     * Override hashCode.
-     *
-     * @return the Objects hashcode.
-     */
-    public int hashCode()
-    {
-        int hashCode = 1;
-        hashCode = 31 * hashCode + LABEL_CMD_TXN;
-        hashCode = 31 * hashCode + LABEL_CMD_SHORT;
-        hashCode = 31 * hashCode + LABEL_CMD_FULL;
-        hashCode = 31 * hashCode + LABEL_TXN;
-        hashCode = 31 * hashCode + LABEL_VC;
-        hashCode = 31 * hashCode + COLOR_BY_TXN;
-        hashCode = 31 * hashCode + COLOR_BY_CMD;
-        hashCode = 31 * hashCode + COLOR_BY_VC;
-        hashCode = 31 * hashCode + labelMode;
-        hashCode = 31 * hashCode + colorMode;
-        hashCode = 31 * hashCode
-            + (DARK_GREEN == null ? 0 : DARK_GREEN.hashCode());
-        hashCode = 31 * hashCode
-            + (DARK_MAGENTA == null ? 0 : DARK_MAGENTA.hashCode());
-        return hashCode;
     }
 }

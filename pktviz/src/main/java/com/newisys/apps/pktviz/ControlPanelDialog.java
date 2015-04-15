@@ -160,8 +160,8 @@ public class ControlPanelDialog
         panelGridbag.setConstraints(labelLabel, c);
         cont.add(labelLabel);
 
-        String[] labelStrings = { "Command & Txn ID", "Command (short)",
-            "Command (long)", "Txn ID", "Virtual Channel" };
+        String[] labelStrings = { "Command & Txn ID", "Command",
+            "Txn ID" };
         labelCombo = new JComboBox(labelStrings);
         labelLabel.setLabelFor(labelCombo);
         c.gridwidth = GridBagConstraints.REMAINDER;
@@ -189,7 +189,7 @@ public class ControlPanelDialog
         panelGridbag.setConstraints(colorLabel, c);
         cont.add(colorLabel);
 
-        String[] colorStrings = { "Txn ID", "Command", "Virtual Channel" };
+        String[] colorStrings = { "Txn ID", "Command" };
         colorCombo = new JComboBox(colorStrings);
         colorLabel.setLabelFor(colorCombo);
         c.gridwidth = GridBagConstraints.REMAINDER;
