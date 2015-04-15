@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.newisys.apps.pktviz.model.PacketInfo;
 import com.newisys.apps.pktviz.model.PacketNode;
@@ -70,11 +72,6 @@ public class SeqTimeTransform
     private Map<FromTo, Boolean> duplicateFromToMap = new HashMap<FromTo, Boolean>();
 
     /**
-     * Sorted list of times present in the packets
-     */
-    private LinkedList<Long> times;
-
-    /**
      * Implements table shown above in class javadoc
      */
     private Map<Long, Long> realToSequentialMap;
@@ -93,7 +90,7 @@ public class SeqTimeTransform
 
     public void reset(Iterator packetIterator)
     {
-        times = new LinkedList<Long>();
+        Set<Long> times = new TreeSet<Long>();
         packetsRegisteredMap = new HashMap<PacketInfo, Boolean>();
         realToSequentialMap = new HashMap<Long, Long>();
 
@@ -104,16 +101,9 @@ public class SeqTimeTransform
         {
             packetInfo = (PacketInfo) packetIterator.next();
             packetsRegisteredMap.put(packetInfo, Boolean.TRUE);
-            if (!times.contains(packetInfo.getFromTimeActual()))
-            {
-                times.add(packetInfo.getFromTimeActual());
-            }
-            if (!times.contains(packetInfo.getToTimeActual()))
-            {
-                times.add(packetInfo.getToTimeActual());
-            }
+            times.add(packetInfo.getFromTimeActual());
+            times.add(packetInfo.getToTimeActual());
         }
-        Collections.sort(times);
 
         long sequentialIndex = 0;
         for (Long realTime : times)
