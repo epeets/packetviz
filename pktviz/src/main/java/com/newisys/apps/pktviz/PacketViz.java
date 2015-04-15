@@ -18,8 +18,10 @@
 
 package com.newisys.apps.pktviz;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
 import java.io.File;
 
 import javax.swing.UIManager;
@@ -46,28 +48,26 @@ public class PacketViz
                 mf.openPacketGraph(new File(args[0]));
             }
 
-            Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-            Dimension screenSize = defaultToolkit.getScreenSize();
+            final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            final GraphicsDevice dsd = ge.getDefaultScreenDevice();
+            final GraphicsConfiguration dc = dsd.getDefaultConfiguration();
+            final Rectangle screenBounds = dc.getBounds();
 
-            Dimension totalSize = new Dimension(screenSize.width * 15 / 16,
-                screenSize.height * 7 / 8);
+            final Rectangle totalBounds = new Rectangle(screenBounds);
+            totalBounds.grow(-screenBounds.width / 32, -screenBounds.height / 16);
 
             int cpdWidth = cpd.getWidth();
-            Dimension mfSize = new Dimension(totalSize.width - cpdWidth - 10,
-                totalSize.height);
-            mf.setSize(mfSize);
+            final Rectangle mfBounds = new Rectangle(totalBounds);
+            mfBounds.width -= cpdWidth - 10;
+            mf.setBounds(mfBounds);
 
-            int mfLeft = (screenSize.width - totalSize.width) / 2;
-            int mfTop = (screenSize.height - totalSize.height) / 2;
-            mf.setLocation(mfLeft, mfTop);
-
-            int cpdLeft = mfLeft + mfSize.width + 10;
-            cpd.setLocation(cpdLeft, mfTop);
+            int cpdLeft = mfBounds.x + mfBounds.width + 10;
+            cpd.setLocation(cpdLeft, mfBounds.y);
 
             int cpdHeight = cpd.getHeight();
-            int pdfTop = mfTop + cpdHeight + 10;
+            int pdfTop = mfBounds.y + cpdHeight + 10;
             pdd.setLocation(cpdLeft, pdfTop);
-            pdd.setSize(cpdWidth, totalSize.height - cpdHeight - 10);
+            pdd.setSize(cpdWidth, mfBounds.height - cpdHeight - 10);
 
             mf.show();
             cpd.show();
