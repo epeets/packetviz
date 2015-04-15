@@ -18,14 +18,12 @@
 
 package com.newisys.apps.pktviz.view;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 
@@ -33,12 +31,6 @@ import javax.swing.BorderFactory;
 
 import com.newisys.apps.pktviz.model.PacketNode;
 
-/**
- * Implements the label for the arrow in the packet graph
- * 
- * @author trevor.robinson
- *
- */
 class JPacketNodeHeader
     extends JAbstractPacketNode
 {
@@ -48,14 +40,10 @@ class JPacketNodeHeader
 
         setBorder(BorderFactory.createMatteBorder(0, 1, 1, 0, Color.GRAY));
 
-        setMinimumSize(new Dimension(50, 15));
-        setPreferredSize(new Dimension(50, 15));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        setMinimumSize(new Dimension(100, 15));
+        setPreferredSize(new Dimension(150, 50));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
     }
-
-    private static final float[] dashPattern = { 5, 2 };
-    private static final Stroke stroke = new BasicStroke(1,
-        BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10, dashPattern, 0);
 
     protected void paintComponent(Graphics g)
     {

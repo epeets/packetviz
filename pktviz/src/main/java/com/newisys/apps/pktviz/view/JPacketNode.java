@@ -38,8 +38,8 @@ class JPacketNode
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
 
         setMinimumSize(new Dimension(200, 15));
-        setPreferredSize(new Dimension(200, 15));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        setPreferredSize(new Dimension(200, 50));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
     }
 
     protected void paintComponent(Graphics g)
