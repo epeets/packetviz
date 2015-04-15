@@ -40,6 +40,7 @@ import com.newisys.apps.pktviz.model.filter.PacketFilter;
 import com.newisys.apps.pktviz.model.filter.TxnIdFilter;
 import com.newisys.apps.pktviz.model.filter.TxnIdMultiFilter;
 import com.newisys.apps.pktviz.model.xform.ActualTimeTransform;
+import com.newisys.apps.pktviz.model.xform.AdjSeqTimeTransform;
 import com.newisys.apps.pktviz.model.xform.PacketTimeTransform;
 import com.newisys.apps.pktviz.model.xform.SeqTimeTransform;
 import com.newisys.util.format.SizedIntegerFormat;
@@ -55,18 +56,18 @@ public class ControlPanelDialog
 
     private transient ViewSettings viewSettings;
 
-    private JComboBox labelCombo;
-    private JComboBox colorCombo;
+    private JComboBox<String> labelCombo;
+    private JComboBox<String> colorCombo;
     private JCheckBox autoStyleCheck;
 
-    private JComboBox filterAttrCombo;
+    private JComboBox<String> filterAttrCombo;
     private JLabel filterValueLabel;
     private JTextField filterValueField;
     private JLabel filterMaskLabel;
     private JTextField filterMaskField;
 
     private SpinnerNumberModel scaleModel;
-    private JCheckBox seqTimeCheck;
+    private JComboBox<String> transformCombo;
 
     public ControlPanelDialog(Frame owner, ViewSettings viewSettings)
         throws HeadlessException
@@ -162,7 +163,7 @@ public class ControlPanelDialog
 
         String[] labelStrings = { "Command & Txn ID", "Command",
             "Txn ID" };
-        labelCombo = new JComboBox(labelStrings);
+        labelCombo = new JComboBox<String>(labelStrings);
         labelLabel.setLabelFor(labelCombo);
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.weightx = 1.0;
@@ -190,7 +191,7 @@ public class ControlPanelDialog
         cont.add(colorLabel);
 
         String[] colorStrings = { "Txn ID", "Command" };
-        colorCombo = new JComboBox(colorStrings);
+        colorCombo = new JComboBox<String>(colorStrings);
         colorLabel.setLabelFor(colorCombo);
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.weightx = 1.0;
@@ -262,7 +263,7 @@ public class ControlPanelDialog
         cont.add(attrLabel);
 
         String[] attrStrings = { "(none)", "Txn ID", "Memory Line", "Address" };
-        filterAttrCombo = new JComboBox(attrStrings);
+        filterAttrCombo = new JComboBox<String>(attrStrings);
         attrLabel.setLabelFor(filterAttrCombo);
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.weightx = 1.0;
@@ -642,30 +643,34 @@ public class ControlPanelDialog
 
         ////////////////////////////////////////
 
-        seqTimeCheck = new JCheckBox("Sequential time");
-        c.gridwidth = GridBagConstraints.REMAINDER;
+        JLabel transformLabel = new JLabel("Transform:");
+        c.gridwidth = 1;
         c.weightx = 0.0;
-        panelGridbag.setConstraints(seqTimeCheck, c);
-        cont.add(seqTimeCheck);
+        panelGridbag.setConstraints(transformLabel, c);
+        cont.add(transformLabel);
 
-        seqTimeCheck.addChangeListener(new ChangeListener()
+        String[] transformStrings = { "Actual", "Sequential", "Adj. Sequential" };
+        transformCombo = new JComboBox<String>(transformStrings);
+        transformLabel.setLabelFor(transformCombo);
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.weightx = 1.0;
+        panelGridbag.setConstraints(transformCombo, c);
+        cont.add(transformCombo);
+
+        transformCombo.addActionListener(new ActionListener()
         {
-            public void stateChanged(ChangeEvent e)
+            public void actionPerformed(ActionEvent e)
             {
-                JCheckBox seqTimeCheck = (JCheckBox) e.getSource();
-                boolean isSeqTime = seqTimeCheck.isSelected();
-
-                PacketTimeTransform xform;
-                if (isSeqTime)
-                {
-                    xform = new SeqTimeTransform();
+                switch (transformCombo.getSelectedIndex()) {
+                case 1:
+                    viewSettings.setTimeTransform(new SeqTimeTransform());
+                    break;
+                case 2:
+                    viewSettings.setTimeTransform(new AdjSeqTimeTransform());
+                    break;
+                default:
+                    viewSettings.setTimeTransform(new ActualTimeTransform());
                 }
-                else
-                {
-                    xform = new ActualTimeTransform();
-                }
-
-                viewSettings.setTimeTransform(xform);
             }
         });
 
@@ -680,7 +685,13 @@ public class ControlPanelDialog
     private void showTimeTransform()
     {
         PacketTimeTransform xform = viewSettings.getTimeTransform();
-        seqTimeCheck.setSelected(xform instanceof SeqTimeTransform);
+        if (xform.getClass() == SeqTimeTransform.class) {
+            transformCombo.setSelectedIndex(1);
+        } else if (xform.getClass() == AdjSeqTimeTransform.class) {
+            transformCombo.setSelectedIndex(2);
+        } else {
+            transformCombo.setSelectedIndex(0);
+        }
     }
 
     public void propertyChange(PropertyChangeEvent evt)

@@ -22,60 +22,29 @@ import java.util.Iterator;
 
 import com.newisys.apps.pktviz.model.PacketInfo;
 
-public class ActualTimeTransform
-    implements PacketTimeTransform
-{
+public class ActualTimeTransform implements PacketTimeTransform {
 
     private int slant;
 
-    public ActualTimeTransform()
-    {
+    public ActualTimeTransform() {
         this(25);
     }
 
-    public ActualTimeTransform(int _slant)
-    {
+    public ActualTimeTransform(int _slant) {
         slant = _slant;
     }
 
-    public void transform(PacketInfo packet)
-    {
+    public void reset(Iterator<PacketInfo> packetIterator) {
+    }
+
+    public void transform(PacketInfo packet) {
         long fromTime = packet.getFromTimeActual();
         long toTime = packet.getToTimeActual();
 
-        if (fromTime == toTime) toTime += slant;
+        if (fromTime == toTime)
+            toTime += slant;
 
         packet.setFromTime(fromTime);
         packet.setToTime(toTime);
     }
-
-    public boolean equals(Object obj)
-    {
-        if (!(obj instanceof ActualTimeTransform))
-        {
-            return false;
-        }
-
-        ActualTimeTransform other = (ActualTimeTransform) obj;
-        return (slant == other.slant);
-    }
-
-    public void reset(Iterator packetIterator)
-    {
-        // NO-OP for ActualTimeTransform
-
-    }
-
-    /**
-     * Override hashCode.
-     *
-     * @return the Objects hashcode.
-     */
-    public int hashCode()
-    {
-        int hashCode = 1;
-        hashCode = 31 * hashCode + slant;
-        return hashCode;
-    }
-
 }

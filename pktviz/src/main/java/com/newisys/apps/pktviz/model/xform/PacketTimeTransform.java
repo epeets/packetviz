@@ -22,9 +22,8 @@ import java.util.Iterator;
 
 import com.newisys.apps.pktviz.model.PacketInfo;
 
-public interface PacketTimeTransform
-{
-    void reset(Iterator packetIterator);
+public interface PacketTimeTransform {
+    void reset(Iterator<PacketInfo> packetIterator);
 
     void transform(PacketInfo packet);
 

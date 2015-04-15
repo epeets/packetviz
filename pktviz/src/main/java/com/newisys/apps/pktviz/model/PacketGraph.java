@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterators;
 import com.newisys.apps.pktviz.model.filter.PacketFilter;
 import com.newisys.apps.pktviz.model.xform.PacketTimeTransform;
 import com.newisys.prtree.Interval;
@@ -251,55 +253,30 @@ public final class PacketGraph
         }
     }
 
-    private void reindexPackets()
-    {
+    private void reindexPackets() {
         packetIndex.clear();
 
-        if (timeTransform != null)
-        {
-            //Iterator packetIterator = packetList.iterator();
-            //timeTransform.reset(packetIterator);
-            timeTransform.reset(getFilteredPackets().iterator());
+        if (timeTransform != null) {
+            timeTransform.reset(Iterators.filter(packetList.iterator(),
+                    new Predicate<PacketInfo>() {
+                        public boolean apply(PacketInfo packet) {
+                            return matchesFilter(packet);
+                        }
+                    }));
         }
 
-        Iterator<PacketInfo> i = packetList.iterator();
-        while (i.hasNext())
-        {
-            PacketInfo packet = i.next();
-            if (matchesFilter(packet))
-            {
-                indexPacket(packet);
+        for (final PacketInfo packet : packetList) {
+            if (matchesFilter(packet)) {
+                if (timeTransform != null) {
+                    timeTransform.transform(packet);
+                }
+                packetIndex.add(packet);
             }
         }
-    }
-
-    private List<PacketInfo> getFilteredPackets()
-    {
-        List<PacketInfo> filteredPackets = new LinkedList<PacketInfo>();
-        for (Object packetTmp : packetList)
-        {
-            PacketInfo packet = (PacketInfo) packetTmp;
-            if (matchesFilter(packet))
-            {
-                filteredPackets.add(packet);
-            }
-        }
-        return filteredPackets;
-    }
-
-    private void indexPacket(PacketInfo packet)
-    {
-        if (timeTransform != null)
-        {
-            timeTransform.transform(packet);
-        }
-
-        packetIndex.add(packet);
     }
 
     public void allPacketsAddedEvent()
     {
         reindexPackets();
     }
-
 }
