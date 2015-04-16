@@ -18,77 +18,112 @@
 
 package com.newisys.apps.pktviz.model.xform;
 
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.SortedMap;
 
+import com.google.common.collect.Maps;
 import com.newisys.apps.pktviz.model.PacketInfo;
 import com.newisys.apps.pktviz.model.PacketNode;
 
-public class AdjSeqTimeTransform extends SeqTimeTransform {
+public class AdjSeqTimeTransform implements PacketTimeTransform {
 
-    private Set<FromTo> duplicateFromToSet = new HashSet<FromTo>();
-    private int timeAdjustor;
+    private static final class AnalysisTickInfo {
 
-    @Override
+        final Map<PacketNode, int[]> nodeAllocMap = Maps.newHashMap();
+        int fromPackets;
+        int toPackets;
+    }
+
+    private static final class FinalTickInfo {
+
+        final long baseTime;
+        final Map<PacketNode, int[]> nodeAllocMap;
+
+        public FinalTickInfo(long baseTime, int expectedNodes) {
+            this.baseTime = baseTime;
+            nodeAllocMap = new LinkedHashMap<PacketNode, int[]>(expectedNodes);
+        }
+    }
+
+    private Map<Long, FinalTickInfo> tickInfoMap;
+
     public void reset(Iterator<PacketInfo> packetIterator) {
-        super.reset(packetIterator);
-        timeAdjustor = 0;
+        final SortedMap<Long, AnalysisTickInfo> analysisMap = Maps.newTreeMap();
+        while (packetIterator.hasNext()) {
+            final PacketInfo packet = packetIterator.next();
+            final long fromTime = packet.getFromTimeActual();
+            final AnalysisTickInfo fromInfo = getAnalysisTickInfo(analysisMap, fromTime);
+            final int fromAlloc = mapIncrement(fromInfo.nodeAllocMap, packet.getFromNode(), 1);
+            ++fromInfo.fromPackets;
+
+            final long toTime = packet.getToTimeActual();
+            final AnalysisTickInfo toInfo = getAnalysisTickInfo(analysisMap, toTime);
+            mapIncrement(toInfo.nodeAllocMap, packet.getToNode(), fromTime == toTime ? fromAlloc
+                    : 1);
+            ++toInfo.toPackets;
+        }
+
+        tickInfoMap = Maps.newHashMapWithExpectedSize(analysisMap.size());
+        int spanCount = 0;
+        long seqTime = 0;
+        for (final Map.Entry<Long, AnalysisTickInfo> entry : analysisMap.entrySet()) {
+            final Long realTime = entry.getKey();
+            final AnalysisTickInfo info = entry.getValue();
+            tickInfoMap.put(realTime, new FinalTickInfo(seqTime, info.nodeAllocMap.size()));
+            spanCount += info.fromPackets - info.toPackets;
+            seqTime += mapMax(info.nodeAllocMap, 1) + 1;
+        }
     }
 
-    @Override
-    public void transform(PacketInfo packet) {
-        long fromTime = packet.getFromTimeActual();
-        long toTime = packet.getToTimeActual();
+    private static AnalysisTickInfo getAnalysisTickInfo(Map<Long, AnalysisTickInfo> map, long tick) {
+        AnalysisTickInfo info = map.get(tick);
+        if (info == null) {
+            info = new AnalysisTickInfo();
+            map.put(tick, info);
+        }
+        return info;
+    }
 
-        PacketNode fromNode = packet.getFromNode();
-        PacketNode toNode = packet.getToNode();
-        FromTo fromTo = new FromTo(fromTime, toTime, fromNode, toNode);
-        if (duplicateFromToSet.contains(fromTo)) {
-            timeAdjustor++;
+    private static <T> int mapIncrement(Map<T, int[]> map, T key, int min) {
+        int[] count = map.get(key);
+        if (count == null) {
+            count = new int[] { min };
+            map.put(key, count);
         } else {
-            duplicateFromToSet.add(fromTo);
+            count[0] = Math.max(min, count[0] + 1);
         }
-
-        if (fromNode.equals(toNode)) {
-            // If this is a horizontal message, add more time
-            timeAdjustor++;
-        }
-
-        packet.setFromTime(getSequentialTime(fromTime) + timeAdjustor);
-        packet.setToTime(getSequentialTime(toTime) + timeAdjustor);
+        return count[0];
     }
 
-    private static class FromTo {
-        private long fromTime;
-        private long toTime;
-        private PacketNode fromNode;
-        private PacketNode toNode;
-
-        public FromTo(long fromTime, long toTime, PacketNode fromNode, PacketNode toNode) {
-            this.fromTime = fromTime;
-            this.toTime = toTime;
-            this.fromNode = fromNode;
-            this.toNode = toNode;
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) (fromTime ^ (fromTime >>> 32)) ^ (int) (toTime ^ (toTime >>> 32)) ^
-                    fromNode.hashCode() ^ toNode.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) {
-                return true;
+    private static int mapMax(Map<?, int[]> map, int seed) {
+        int max = seed;
+        for (final int[] count : map.values()) {
+            if (count[0] > max) {
+                max = count[0];
             }
-            if (!(o instanceof FromTo)) {
-                return false;
-            }
-            FromTo other = (FromTo) o;
-            return fromTime == other.fromTime && toTime == other.toTime &&
-                    fromNode.equals(other.fromNode) && toNode.equals(other.toNode);
         }
+        return max;
+    }
+
+    public void transform(PacketInfo packet) {
+        final long fromTime = packet.getFromTimeActual();
+        final FinalTickInfo fromInfo = getFinalTickInfo(fromTime);
+        final int fromAlloc = mapIncrement(fromInfo.nodeAllocMap, packet.getFromNode(), 1);
+        packet.setFromTime(fromInfo.baseTime + fromAlloc - 1);
+
+        final long toTime = packet.getToTimeActual();
+        final FinalTickInfo toInfo = getFinalTickInfo(toTime);
+        final int toAlloc = mapIncrement(toInfo.nodeAllocMap, packet.getToNode(),
+                fromTime == toTime ? fromAlloc : 1);
+        packet.setToTime(toInfo.baseTime + toAlloc - 1);
+    }
+
+    public FinalTickInfo getFinalTickInfo(long time) {
+        assert tickInfoMap != null : "sequential time map not initialized";
+        final FinalTickInfo tickInfo = tickInfoMap.get(time);
+        assert tickInfo != null : "time " + time + " not mapped to sequential time";
+        return tickInfo;
     }
 }

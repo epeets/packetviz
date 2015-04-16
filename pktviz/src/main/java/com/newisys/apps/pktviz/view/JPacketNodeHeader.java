@@ -42,7 +42,7 @@ class JPacketNodeHeader
 
         setMinimumSize(new Dimension(100, 15));
         setPreferredSize(new Dimension(150, 50));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
     }
 
     protected void paintComponent(Graphics g)

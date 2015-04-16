@@ -50,7 +50,7 @@ public class SeqTimeTransform implements PacketTimeTransform {
         packet.setToTime(getSequentialTime(packet.getToTimeActual()));
     }
 
-    long getSequentialTime(long time) {
+    private long getSequentialTime(long time) {
         assert realToSequentialMap != null : "sequential time map not initialized";
         final Long timeIndex = realToSequentialMap.get(time);
         assert timeIndex != null : "time " + time + " not mapped to sequential time";
