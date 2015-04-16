@@ -336,6 +336,8 @@ public class MainFrame
         graphScrollPane.setRowHeaderView(packetGraphView.getRowHeader());
         graphScrollPane.setCorner(JScrollPane.UPPER_LEFT_CORNER,
             packetGraphView.getUpperLeftCorner());
+        graphScrollPane.getHorizontalScrollBar().setUnitIncrement(10);
+        graphScrollPane.getVerticalScrollBar().setUnitIncrement(10);
         contentPane.add(graphScrollPane, BorderLayout.CENTER);
     }
 
